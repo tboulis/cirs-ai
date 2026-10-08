@@ -1,0 +1,62 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "dictionaries": [
+    "en",
+    "el"
+  ],
+  "import": [
+    "https://cdn.jsdelivr.net/npm/@cspell/dict-el/cspell-ext.json"
+  ],
+  "language": "el,en",
+  "words": [
+    "acall",
+    "aiofiles",
+    "asyncio",
+    "chromadb",
+    "cirs",
+    "CSIRT",
+    "dotenv",
+    "ENISA",
+    "fastapi",
+    "gguf",
+    "httpx",
+    "HUGGINGFACE",
+    "huggingfacehub",
+    "langchain",
+    "langsmith",
+    "linalg",
+    "llms",
+    "metadatas",
+    "ndarray",
+    "numpy",
+    "passlib",
+    "Pydantic",
+    "pypdf",
+    "scikit",
+    "setuptools",
+    "sqlalchemy",
+    "torchvision",
+    "uvicorn",
+    "vecs",
+    "vectorstores",
+    "venv",
+    "Αναφορά",
+    "Ανθεκτικότητα",
+    "επαναβαθμολόγηση",
+    "επιχειρησιακή",
+    "κρίσιμων",
+    "Μακροεντολές",
+    "Μπουλής",
+    "Παλαιοκρασσάς",
+    "περιστατικών",
+    "συνέχεια",
+    "υποδομών"
+  ],
+  // Optional: ignore patterns like node_modules
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "build",
+    "*.lock"
+  ]
+}

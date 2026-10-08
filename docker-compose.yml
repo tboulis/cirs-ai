@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - backend/.env
+    environment:
+      - DATABASE_URL=sqlite:////data/cirs_llm.db
+      - UPLOAD_DIR=/app/uploads
+      - CHROMA_PERSIST_DIR=/app/chroma_db
+    volumes:
+      - dbdata:/data
+      - uploads:/app/uploads
+      - chroma:/app/chroma_db
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "9494:80"
+    restart: unless-stopped
+
+volumes:
+  dbdata:
+  uploads:
+  chroma:
+
+

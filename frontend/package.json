@@ -1,0 +1,56 @@
+{
+  "name": "cirs-agent-frontend",
+  "version": "1.0.0",
+  "description": "React frontend for Critical Infrastructure Resilience Support chatbot",
+  "private": true,
+  "dependencies": {
+    "@tanstack/react-query": "^4.36.1",
+    "axios": "^1.6.7",
+    "clsx": "^2.0.0",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.0",
+    "i18next": "25.6.0",
+    "lucide-react": "^0.294.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-hot-toast": "^2.4.1",
+    "react-i18next": "16.0.1",
+    "react-markdown": "^9.0.1",
+    "react-router-dom": "^6.20.1",
+    "react-syntax-highlighter": "^15.5.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.3",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "@types/react-syntax-highlighter": "^15.5.11",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "web-vitals": "^3.5.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.1"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

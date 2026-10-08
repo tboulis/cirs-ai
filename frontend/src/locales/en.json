@@ -1,0 +1,27 @@
+{
+  "appName": "CIRS-AI",
+  "newConversation": "New Conversation",
+  "nav": {
+    "chat": "Chat",
+    "documents": "Documents",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "recent": "Recent Conversations",
+    "noConversations": "No conversations yet",
+    "startPrompt": "Start a new conversation to begin",
+    "messages": "{{count}} messages"
+  },
+  "chat": {
+    "welcomeTitle": "Welcome to CIRS-AI",
+    "welcomeSubtitle": "I'm here to help you with critical infrastructure resilience questions. Ask me about cybersecurity, risk assessment, business continuity, or any related topics.",
+    "placeholder": "Ask me about critical infrastructure resilience...",
+    "pressEnter": "Press Enter to send, Shift+Enter for new line",
+    "loadingConversation": "Loading conversation..."
+  },
+  "model": "Model",
+  "lang": {
+    "en": "EN",
+    "el": "EL"
+  }
+}

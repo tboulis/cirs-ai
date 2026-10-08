@@ -1,0 +1,23 @@
+# Node & build output
+node_modules
+frontend/node_modules
+frontend/dist
+
+# Python
+**/__pycache__
+*.pyc
+.pytest_cache
+.venv
+backend/venv
+
+# VCS & OS
+.git
+.gitignore
+.DS_Store
+
+# Data & local env
+backend/cirs_llm.db
+backend/uploads
+backend/chroma_db
+backend/.env
+backend/.env.*

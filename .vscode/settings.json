@@ -1,0 +1,13 @@
+{
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "editor.wordWrap": "on",
+  "editor.wordWrapColumn": 100,
+  "editor.rulers": [100],
+  "less.lint.unknownAtRules": "ignore",
+  "terminal.integrated.env.windows": { "VIRTUAL_PY_SUFFIX": "Scripts/python.exe" },
+  "terminal.integrated.env.osx":     { "VIRTUAL_PY_SUFFIX": "bin/python" },
+  "terminal.integrated.env.linux": {
+    "VIRTUAL_PY_SUFFIX": "bin/python"
+  },
+}
