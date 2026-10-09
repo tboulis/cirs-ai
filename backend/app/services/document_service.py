@@ -211,13 +211,15 @@ class DocumentService:
     async def search_documents(
         self,
         query: str,
+        user_id: int,
         document_ids: List[int] = None,
         limit: int = 5,
         similarity_threshold: float | None = 0.7,
         db: Session = None
     ) -> List[DocumentSearchResult]:
         """
-        Search for relevant document chunks using semantic similarity
+        Search for relevant document chunks using semantic similarity.
+        Results are always restricted to the chunks of *user_id*.
         """
         if not self.embedding_model or not self.collection:
             raise Exception("Embedding model or vector database not available")
@@ -226,16 +228,17 @@ class DocumentService:
             # Create query embedding
             query_embedding = self.embedding_model.encode([query])[0]
             
-            # Build filter conditions
-            where_conditions = {}
+            # Build filter conditions: always the user's own chunks, optionally specific documents
+            conditions = [{"user_id": user_id}]
             if document_ids:
-                where_conditions["document_id"] = {"$in": document_ids}
+                conditions.append({"document_id": {"$in": document_ids}})
+            where_conditions = conditions[0] if len(conditions) == 1 else {"$and": conditions}
             
             # Search in vector database
             results = self.collection.query(
                 query_embeddings=[query_embedding.tolist()],
                 n_results=limit * 2,  # Get more results to filter
-                where=where_conditions if where_conditions else None
+                where=where_conditions
             )
             
             # Process results

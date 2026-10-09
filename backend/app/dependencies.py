@@ -9,6 +9,7 @@ from app.models.models import User
 
 from app.services.document_service import DocumentService
 from app.services.llm_service import LLMService
+from app.services.rag_service import RagService
 
 # These will be attached to the FastAPI app at startup
 
@@ -19,6 +20,10 @@ async def get_doc_service(request: Request) -> DocumentService:
 
 async def get_llm_service(request: Request) -> LLMService:
     return request.app.state.llm_service  # type: ignore[attr-defined]
+
+
+async def get_rag_service(request: Request) -> RagService:
+    return request.app.state.rag_service  # type: ignore[attr-defined]
 
 
 # -------------------- Auth dependencies --------------------

@@ -11,6 +11,14 @@ from app.routers import chat, documents, health, auth
 from app.core.database import engine, SessionLocal
 from app.models import models
 from app.core.config import settings
+
+# JWTs are signed with SECRET_KEY: refuse to start with a missing, placeholder or short value
+_PLACEHOLDER_SECRETS = {"", "secret_key", "changeme", "secret", "your-secret-key", "your-secret-key-here"}
+if settings.SECRET_KEY in _PLACEHOLDER_SECRETS or len(settings.SECRET_KEY) < 32:
+    raise RuntimeError(
+        "SECRET_KEY must be a random value of at least 32 characters, e.g. "
+        "python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    )
 from sqlalchemy import text
 import bcrypt
 

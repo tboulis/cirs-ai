@@ -66,7 +66,7 @@ class RagService:
             # Fallback: construct a fresh HF embedding (may load model once here)
             embedding_model_name = (
                 getattr(settings, "EMBEDDING_MODEL", None)
-                or "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+                or "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
             )
             return HuggingFaceEmbeddings(model_name=embedding_model_name)
 
@@ -79,30 +79,19 @@ class RagService:
             embedding_function=self.embedding_fn,
         )
 
-        # --- Retriever (use score threshold to reduce junk) ---
-        self.retriever = self.vector_store.as_retriever(
-            search_type="similarity_score_threshold",
-            search_kwargs={"k": 5, "score_threshold": 0.35},
-        )
+        # --- Retrieval settings (score threshold reduces junk); the retriever itself is built
+        # per request in run(), so the per-user filter never touches shared state ---
+        self.search_kwargs: Dict[str, Any] = {"k": 5, "score_threshold": 0.35}
 
-        # Keep reference to LLM service for dynamic model switching
+        # --- Default LLM (provider-agnostic); checked once here so a missing model fails at startup ---
         self.llm_service = llm_service
-        self.current_model_name: Optional[str] = getattr(settings, "DEFAULT_MODEL", None)
-        self.current_provider: Optional[str] = None
-        self.current_api_base: Optional[str] = None
-        self.current_api_key: Optional[str] = None
-        self.current_temperature: Optional[float] = None
-        self.current_max_tokens: Optional[int] = None
-
-        # --- LLM from your service (provider-agnostic) ---
-        # Resolve default if missing
-        if not self.current_model_name:
+        self.default_model_name: Optional[str] = getattr(settings, "DEFAULT_MODEL", None)
+        if not self.default_model_name:
             try:
-                self.current_model_name = self.llm_service.get_default_model()
+                self.default_model_name = self.llm_service.get_default_model()
             except Exception:
-                self.current_model_name = getattr(settings, "DEFAULT_MODEL", None)
-        self.llm = self.llm_service.as_langchain_llm(model_name=self.current_model_name)
-        if self.llm is None:
+                self.default_model_name = getattr(settings, "DEFAULT_MODEL", None)
+        if self.llm_service.as_langchain_llm(model_name=self.default_model_name) is None:
             raise RuntimeError(
                 (
                     "No chat model configured. Set one of the following in backend .env: "
@@ -124,10 +113,6 @@ class RagService:
                 ("human", "{input}"),
             ]
         )
-        self.history_aware_retriever = create_history_aware_retriever(
-            self.llm, self.retriever, self.condense_q_prompt
-        )
-
         # --- Answer synthesizer over retrieved docs ---
         # This prompt is used by create_stuff_documents_chain and MUST contain {context} and {input}
         self.answer_prompt = ChatPromptTemplate.from_messages(
@@ -148,51 +133,30 @@ class RagService:
             ]
         )
 
-        self.combine_docs_chain = create_stuff_documents_chain(
-            self.llm, self.answer_prompt
-        )
-
-        # Final RAG chain = history-aware retriever → stuff combine chain
-        self.chain = create_retrieval_chain(
-            self.history_aware_retriever, self.combine_docs_chain
-        )
-
-    def _rebuild_for_model(self, model_name: Optional[str], provider: Optional[str] = None, api_base: Optional[str] = None, api_key: Optional[str] = None, temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> None:
-        """Rebuild LLM and dependent chains if the model/provider/base changes."""
-        self.llm = self.llm_service.as_langchain_llm(model_name=model_name, provider=provider, api_base=api_base, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
-        self.history_aware_retriever = create_history_aware_retriever(
-            self.llm, self.retriever, self.condense_q_prompt
-        )
-        self.combine_docs_chain = create_stuff_documents_chain(self.llm, self.answer_prompt)
-        self.chain = create_retrieval_chain(self.history_aware_retriever, self.combine_docs_chain)
-
     async def run(
         self, *, question: str, chat_history: List[Tuple[str, str]] | None = None, model_name: Optional[str] = None, provider: Optional[str] = None, api_base: Optional[str] = None, api_key: Optional[str] = None, user_id: Optional[int] = None, temperature: Optional[float] = None, max_tokens: Optional[int] = None
     ) -> Tuple[str, List[Dict[str, Any]]]:
-        """Return `(answer, sources)` where sources are ready for your API schema."""
-        if (
-            ((model_name or self.current_model_name) and (model_name or self.current_model_name) != self.current_model_name)
-            or (provider != self.current_provider)
-            or (api_base != self.current_api_base)
-            or (api_key and api_key != self.current_api_key)
-            or (temperature != self.current_temperature)
-            or (max_tokens != self.current_max_tokens)
-        ):
-            self._rebuild_for_model(model_name or self.current_model_name, provider, api_base, api_key, temperature, max_tokens)
-            self.current_model_name = model_name or self.current_model_name
-            self.current_provider = provider
-            self.current_api_base = api_base
-            self.current_api_key = api_key or self.current_api_key
-            self.current_temperature = temperature
-            self.current_max_tokens = max_tokens
-        lc_history = _to_langchain_messages(chat_history)
-        # Filter retrieval by user if provided
+        """Return `(answer, sources)` where sources are ready for your API schema.
+
+        The LLM, the user-filtered retriever and the chain are built for this request only:
+        the service is a shared singleton, so nothing request-specific is stored on it.
+        """
+        llm = self.llm_service.as_langchain_llm(
+            model_name=model_name or self.default_model_name, provider=provider,
+            api_base=api_base, api_key=api_key, temperature=temperature, max_tokens=max_tokens,
+        )
+        search_kwargs = dict(self.search_kwargs)
         if user_id is not None:
-            self.retriever.search_kwargs = {
-                **self.retriever.search_kwargs,
-                "filter": {"user_id": user_id},
-            }
-        result = await self.chain.ainvoke({"input": question, "chat_history": lc_history})
+            search_kwargs["filter"] = {"user_id": user_id}
+        retriever = self.vector_store.as_retriever(
+            search_type="similarity_score_threshold", search_kwargs=search_kwargs
+        )
+        chain = create_retrieval_chain(
+            create_history_aware_retriever(llm, retriever, self.condense_q_prompt),
+            create_stuff_documents_chain(llm, self.answer_prompt),
+        )
+        lc_history = _to_langchain_messages(chat_history)
+        result = await chain.ainvoke({"input": question, "chat_history": lc_history})
 
         answer: str = result.get("answer", "")
         source_docs: List[Document] = result.get("context", [])  # from create_retrieval_chain

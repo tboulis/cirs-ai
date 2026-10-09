@@ -60,6 +60,8 @@ Copy the example env and edit values as needed (e.g., `OPENAI_API_KEY`):
 cp backend/env.example backend/.env
 ```
 
+Then set `SECRET_KEY` in `backend/.env` to a random value of at least 32 characters (the backend refuses to start otherwise), e.g. `python -c "import secrets; print(secrets.token_urlsafe(48))"`, and configure an LLM provider (`OPENAI_API_KEY` or `OPENAI_COMPAT_BASE_URL`).
+
 ### 2) Build and start containers
 
 From the repo root:
@@ -70,19 +72,19 @@ docker compose up -d --build
 
 This starts:
 
-- `web`: Nginx serving the React build at `/` and proxying `/api/` to the backend
-- `backend`: FastAPI on port 8000 inside the network
+- `web`: Nginx serving the React build at `/` and proxying `/api/` to the backend, published on port 9494
+- `backend`: FastAPI on port 8000, also published on port 8000 for direct API access and the interactive docs at `/docs`
 
-The stack exposes port 80 on your machine. If port 80 is taken, edit `docker-compose.yml` and change `web` → `ports` to `"8080:80"`, then re-run the command above.
+If a port is taken, change the host side of the mapping in `docker-compose.yml` (e.g. `"9595:80"` for `web`), then re-run the command above. Remove the backend's `ports` entry if the API should only be reachable through Nginx.
 
 ### 3) Verify
 
 ```bash
-curl -I http://localhost/
-curl    http://localhost/api/v1/health
+curl -I http://localhost:9494/
+curl    http://localhost:9494/api/v1/health
 ```
 
-Open your browser at `http://localhost`.
+Open your browser at `http://localhost:9494`. The FastAPI docs are at `http://localhost:8000/docs`.
 
 ### 4) Logs and lifecycle
 

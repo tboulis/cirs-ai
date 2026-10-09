@@ -30,14 +30,14 @@ class Settings(BaseSettings):
     
     # Vector Database
     CHROMA_PERSIST_DIR: str = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
-    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
     
     # Security
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "secret_key")
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "")  # required, see main.py
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
     # Conversation relevance: max cosine similarity to the domain descriptions below.
-    # 0.25 separates on-topic from off-topic questions (Evalutation/calibrate_domain_filter.py)
+    # 0.25 separates on-topic from off-topic questions in a calibration set (thesis, Section 7.4.5)
     CONVERSATION_RELEVANCE_THRESHOLD: float = 0.25
 
     # Create the demo accounts lyra_1..lyra_5 on startup (local development only)

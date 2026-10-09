@@ -14,7 +14,8 @@ from app.schemas.schemas import (
 )
 from app.services.document_service import DocumentService
 from app.core.config import settings
-from app.dependencies import get_current_user, get_doc_service
+from app.dependencies import get_current_user, get_doc_service, get_rag_service
+from app.services.rag_service import RagService
 
 router = APIRouter()
 
@@ -242,9 +243,16 @@ async def search_documents(
     """
     Search documents using semantic similarity
     """
+    if search_request.document_ids:
+        requested = set(search_request.document_ids)
+        owned = db.query(Document.id).filter(Document.id.in_(requested), Document.user_id == current_user.id).count()
+        if owned != len(requested):
+            raise HTTPException(status_code=404, detail="Document not found")
+
     try:
         results = await doc_service.search_documents(
             query=search_request.query,
+            user_id=current_user.id,
             document_ids=search_request.document_ids,
             limit=search_request.limit,
             similarity_threshold=search_request.similarity_threshold,
@@ -263,16 +271,20 @@ async def search_documents(
 async def delete_document(
     document_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    rag_service: RagService = Depends(get_rag_service)
 ):
     """
-    Delete a document and its associated data
+    Delete a document and its associated data, including its embeddings in the vector store
     """
     document = db.query(Document).filter(Document.id == document_id, Document.user_id == current_user.id).first()
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     
     try:
+        # Delete embeddings first, so a failure leaves the document record in place
+        await rag_service.delete_by_document_id(document_id=document_id)
+
         # Delete file from disk
         if os.path.exists(document.file_path):
             os.remove(document.file_path)
@@ -283,8 +295,6 @@ async def delete_document(
         # Delete document record
         db.delete(document)
         db.commit()
-        
-        # TODO: Clean up vector database entries
         
         return {"message": "Document deleted successfully"}
         
