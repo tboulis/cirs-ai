@@ -99,6 +99,17 @@ export const documentApi = {
     return response.data;
   },
 
+  // The list endpoint is paginated (at most 100 per request); fetch every page.
+  getAllDocuments: async (params?: { processed_only?: boolean }): Promise<Document[]> => {
+    const pageSize = 100;
+    const all: Document[] = [];
+    for (let skip = 0; ; skip += pageSize) {
+      const page = await documentApi.getDocuments({ ...params, skip, limit: pageSize });
+      all.push(...page);
+      if (page.length < pageSize) return all;
+    }
+  },
+
   getDocument: async (documentId: number): Promise<Document> => {
     const response: AxiosResponse<Document> = await api.get(`/documents/${documentId}`);
     return response.data;

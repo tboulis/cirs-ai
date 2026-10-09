@@ -17,7 +17,7 @@ const DocumentsPage: React.FC = () => {
     refetch,
   } = useQuery({
     queryKey: ["documents"],
-    queryFn: () => documentApi.getDocuments({ processed_only: false }),
+    queryFn: () => documentApi.getAllDocuments({ processed_only: false }),
   });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
